@@ -1,0 +1,54 @@
+﻿﻿// EmployeeList.razor
+@using ManagmentSys.Models;
+@using ManagmentSys.Interface;
+@page "/Home"
+
+
+<h3>Employee List</h3>
+
+<h3>Selected Employee Count : @SelectedEmployeesCount</h3>
+<input type="checkbox" id="showFooter" @bind="ShowFooter" />
+<label for="showFooter">Show Footer</label>
+ 
+@if (Employees == null)
+{
+    <div class="spinner"></div>
+}
+else{
+<div class="card-deck">
+    @foreach (var employee in Employees)
+    {
+     <DisplayEmployee OnEmployeeSelection="EmployeeSelectionChanged" Employee="employee" ShowFooter="ShowFooter" >
+    </DisplayEmployee>
+     
+    
+    }
+   
+</div>
+}
+@code{
+     [Inject]
+        public IEmployeeService EmployeeService { get; set; }
+
+        public IEnumerable<Employee> Employees { get; set; }
+        public bool ShowFooter { get; set; } = true;
+        protected override async Task OnInitializedAsync()
+        {
+            Employees = (await EmployeeService.GetEmployees()).ToList();
+        }
+        protected int SelectedEmployeesCount { get; set; } = 0;
+
+        protected void EmployeeSelectionChanged(bool isSelected)
+        {
+            if(isSelected)
+            {
+                SelectedEmployeesCount++;
+            }
+            else
+            {
+                SelectedEmployeesCount--;
+            }
+        }
+     
+
+}
