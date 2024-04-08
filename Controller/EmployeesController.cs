@@ -23,84 +23,137 @@ namespace ManagmentSys.Controller
         [HttpGet]
         public async Task<ActionResult> GetEmployees()
         {
-            var departments = await _Db.Employees.ToListAsync();
-            return Ok(departments);
+            try
+            {
+                var departments = await _Db.Employees.ToListAsync();
+                return Ok(departments);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Employee>> GetEmployee(int id)
         {
-            return await _Db.Employees
-               .Include(e => e.Department)
-               .FirstOrDefaultAsync(e => e.EmployeeId == id);
+            try
+            {
+                var employees = await _Db.Employees
+                   .Include(e => e.Department)
+                   .FirstOrDefaultAsync(e => e.EmployeeId == id);
+                if (employees == null) {
+                    return NotFound();
+                }
+                return employees;
+            }catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
         [HttpPost]
         public async Task<ActionResult<Employee>> CreateEmployee( Employee employee)
         {
-            await _Db.Employees.AddAsync(employee);
-            await _Db.SaveChangesAsync();
-            return StatusCode(StatusCodes.Status200OK);
+            try
+            {
+                await _Db.Employees.AddAsync(employee);
+                await _Db.SaveChangesAsync();
+
+                // Return the newly created employee with a status code of 201 (Created)
+                return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeId }, employee);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"An error occurred: {ex.Message}");
+                // You can customize the error message as needed
+            }
         }
         [HttpPut]
         public async Task<ActionResult<Employee>> UpdateEmployee([FromBody] Employee employee)
         {
-            var result = await _Db.Employees
-                 .FirstOrDefaultAsync(e => e.EmployeeId == employee.EmployeeId);
-
-            if (result != null)
+            try
             {
-                result.FirstName = employee.FirstName;
-                result.LastName = employee.LastName;
-                result.Email = employee.Email;
-                result.DateOfBrith = employee.DateOfBrith;
-                result.Gender = employee.Gender;
-                result.DepartmentId = employee.DepartmentId;
-                result.PhotoPath = employee.PhotoPath;
+                var result = await _Db.Employees.FirstOrDefaultAsync(e => e.EmployeeId == employee.EmployeeId);
 
-                await _Db.SaveChangesAsync();
+                if (result != null)
+                {
+                    result.FirstName = employee.FirstName;
+                    result.LastName = employee.LastName;
+                    result.Email = employee.Email;
+                    result.DateOfBrith = employee.DateOfBrith;
+                    result.Gender = employee.Gender;
+                    result.DepartmentId = employee.DepartmentId;
+                    result.PhotoPath = employee.PhotoPath;
 
-                return result;
+                    await _Db.SaveChangesAsync();
+
+                    return Ok(result); // Return updated employee with status code 200 (OK)
+                }
+
+                return NotFound(); // Employee not found
             }
-            return null;
-
+            catch (Exception ex)
+            {
+                return BadRequest($"An error occurred: {ex.Message}");
+                // You can customize the error message as needed
+            }
         }
-        /*
+
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<Employee>> DeleteEmployee(int id)
         {
             try
             {
-                var employeeToDelete = await employeeRepository.GetEmployee(id);
+                var employee = await _Db.Employees.FirstOrDefaultAsync(e => e.EmployeeId == id);
 
-                if (employeeToDelete == null)
+                if (employee == null)
                 {
-                    return NotFound($"Employee with Id = {id} not found");
+                    return NotFound(); // Employee not found
                 }
 
-                return await employeeRepository.DeleteEmployee(id);
+                _Db.Employees.Remove(employee);
+                await _Db.SaveChangesAsync();
+
+                return Ok(employee); // Return the deleted employee
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Error deleting data");
+                return BadRequest($"An error occurred: {ex.Message}");
+                // You can customize the error message as needed
             }
-        }*/
+        }
+
         [HttpGet("{search}")]
         public async Task<ActionResult<IEnumerable<Employee>>> Search(string name, Gender? gender)
         {
-            IQueryable<Employee> query = _Db.Employees;
-
-            if (!string.IsNullOrEmpty(name))
+            try
             {
-                query = query.Where(e => e.FirstName.Contains(name)
-                            || e.LastName.Contains(name));
-            }
+                IQueryable<Employee> query = _Db.Employees;
 
-            if (gender != null)
+                if (!string.IsNullOrEmpty(name))
+                {
+                    query = query.Where(e => e.FirstName.Contains(name)
+                                || e.LastName.Contains(name));
+                }
+
+                if (gender != null)
+                {
+                    query = query.Where(e => e.Gender == gender);
+                }
+
+                var result = await query.ToListAsync();
+
+                if (result == null || result.Count == 0)
+                {
+                    return NotFound(); // No employees found
+                }
+
+                return Ok(result); // Return the list of employees
+            }
+            catch (Exception ex)
             {
-                query = query.Where(e => e.Gender == gender);
+                return BadRequest($"An error occurred: {ex.Message}");
+                // You can customize the error message as needed
             }
-
-            return await query.ToListAsync();
         }
     }
 }

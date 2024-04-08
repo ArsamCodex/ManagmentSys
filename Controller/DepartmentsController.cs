@@ -21,16 +21,34 @@ namespace ManagmentSys.Controller
         [HttpGet]
         public async Task<ActionResult> GetDepartments()
         {
-
-            var departments = await _Db.Departments.ToListAsync();
-            return Ok(departments);
+            try
+            {
+                var departments = await _Db.Departments.ToListAsync();
+                return Ok(departments);
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Department>> GetDepartment(int id)
         {
-            return await _Db.Departments.FirstOrDefaultAsync(d => d.DepartmentId == id);
+            try
+            {
+                var x = await _Db.Departments.FirstOrDefaultAsync(d => d.DepartmentId == id);
+                if(x==null)
+                {
+                    return NotFound();
+                }
+                return x;
+            }
+            catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
     }
 }

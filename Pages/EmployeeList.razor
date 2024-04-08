@@ -18,7 +18,8 @@ else{
 <div class="card-deck">
     @foreach (var employee in Employees)
     {
-     <DisplayEmployee OnEmployeeSelection="EmployeeSelectionChanged" Employee="employee" ShowFooter="ShowFooter" >
+            <DisplayEmployee OnEmployeeSelection="EmployeeSelectionChanged" Employee="employee" ShowFooter="ShowFooter" OnEmployeeDeleted="EmployeeDeleted">
+                
     </DisplayEmployee>
      
     
@@ -50,5 +51,8 @@ else{
             }
         }
      
-
+    protected async Task EmployeeDeleted()
+    {
+        Employees = (await EmployeeService.GetEmployees()).ToList();
+    }
 }
