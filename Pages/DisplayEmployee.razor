@@ -24,6 +24,9 @@
         </div>
     }
 </div>
+<Confirm @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click"
+         ConfirmationMessage=@($"Are you sure you want to delete \"{Employee.FirstName}\"")>
+</Confirm>
 @code {
     [Parameter]
     public Employee Employee { get; set; }
@@ -31,7 +34,40 @@
     IHttpClientFactory _clientFactory { get; set; }
     [Parameter]
     public bool ShowFooter { get; set; }
+    protected ConfirmBase DeleteConfirmation { get; set; }
+    protected async Task ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            try
+            {
+                var client = _clientFactory.CreateClient();
+                client.BaseAddress = new Uri("https://localhost:7218/");
+                var url = $"api/Employees/{Employee.EmployeeId}";
 
+                var response = await client.DeleteAsync(url);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Handle successful response
+                }
+                else
+                {
+                    // Handle error response
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log exception to the console
+                // _logger.LogError(ex, "An error occurred while processing the request.");
+                // You can also handle or display the error here if needed
+            }
+
+
+            // EmployeeService.DeleteEmployee(Employee.EmployeeId);
+            await OnEmployeeDeleted.InvokeAsync(Employee.EmployeeId);
+        }
+    }
     protected bool IsSelected { get; set; }
 
     [Parameter]
@@ -49,7 +85,8 @@
     public IEmployeeService EmployeeService { get; set; }
     protected async Task Delete_Click()
     {
-
+        DeleteConfirmation.Show();
+        /*
         try
         {
             var client = _clientFactory.CreateClient();
@@ -78,5 +115,6 @@
         // EmployeeService.DeleteEmployee(Employee.EmployeeId);
         await OnEmployeeDeleted.InvokeAsync(Employee.EmployeeId);
         //NavigationManager.NavigateTo("/", true);
-    }
+    }*/
+}
 }
